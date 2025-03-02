@@ -105,21 +105,32 @@ if st.button("Predict"):
         st.subheader("Prediction Result:")
         st.write(f"Predicted possibility of AKI is **{probability:.2f}%**")
 
-        # 使用 KernelExplainer  
+ # 使用 KernelExplainer  
         explainer = shap.KernelExplainer(model.predict_proba, features)  
         shap_values = explainer.shap_values(features)  
 
-        # 使用 HTML 输出  
-        shap.initjs()  # 初始化 JavaScript  
-        force_plot_html = shap.force_plot(  
-            explainer.expected_value[1],  # 对于正类的期望值  
-            shap_values[1],  # 对所有样本的 SHAP 值  
-            features,  
-            matplotlib=False  # 设置为 False  
-        )  
+        # 处理 SHAP 值  
+        if len(shap_values) > 1:  
+            # 对于二分类，选择正类的 SHAP 值  
+            force_plot = shap.force_plot(  
+                explainer.expected_value[1],  # 对于正类的期望值  
+                shap_values[1][0],  # 对第一个样本的 SHAP 值  
+                features.iloc[0],  # 只传递第一个样本的特征  
+                matplotlib=False  # 设置为 False  
+            )  
+        else:  
+            # 处理只有一个类的情况  
+            force_plot = shap.force_plot(  
+                explainer.expected_value[0],  # 对于负类的期望值  
+                shap_values[0][0],  # 对第一个样本的 SHAP 值  
+                features.iloc[0],  # 只传递第一个样本的特征  
+                matplotlib=False  # 设置为 False  
+            )  
 
-        # 在 Streamlit 中显示 HTML 力图  
-        st.components.v1.html(force_plot_html, height=500)  
+        # 在 Streamlit 中显示力图  
+        st.pyplot(force_plot)  # 使用 Streamlit 的 pyplot 显示力图  
 
     except Exception as e:  
         st.error(f"An error occurred: {e}")  
+
+)
