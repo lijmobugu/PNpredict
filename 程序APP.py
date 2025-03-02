@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import LabelEncoder
+import shap
 
 # 机器学习库
 from sklearn.pipeline import Pipeline
