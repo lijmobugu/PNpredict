@@ -62,8 +62,8 @@ feature_ranges = {
 }
 
 # Streamlit 界面
-st.title("Prediction Model with SHAP Visualization")
-st.header("Enter the following feature values:")
+st.title("To predict the risk of AKI after PN")
+st.header("Please enter the following feature values:")
 
 feature_values = {}
 for feature, properties in feature_ranges.items():
