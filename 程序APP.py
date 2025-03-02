@@ -109,27 +109,17 @@ if st.button("Predict"):
         explainer = shap.KernelExplainer(model.predict_proba, features)  
         shap_values = explainer.shap_values(features)  
 
-        # 检查 SHAP 值的数量  
-        if len(shap_values) > 1:  
-            shap.force_plot(  
-                explainer.expected_value[1],  # 对于正类的期望值  
-                shap_values[1],  # 对第一个样本的 SHAP 值  
-                features,  
-                matplotlib=True  
-            )  
-        else:  
-            # 处理只有一个类的情况  
-            shap.force_plot(  
-                explainer.expected_value[0],  # 对于负类的期望值  
-                shap_values[0],  # 对第一个样本的 SHAP 值  
-                features,  
-                matplotlib=True  
-            )  
+        # 使用 HTML 输出  
+        shap.initjs()  # 初始化 JavaScript  
+        force_plot_html = shap.force_plot(  
+            explainer.expected_value[1],  # 对于正类的期望值  
+            shap_values[1],  # 对所有样本的 SHAP 值  
+            features,  
+            matplotlib=False  # 设置为 False  
+        )  
 
-        plt.savefig("shap_force_plot.png", bbox_inches="tight", dpi=300)  
-
-        # 在 Streamlit 中显示图片  
-        st.image("shap_force_plot.png", caption="SHAP Force Plot", use_column_width=True)  
+        # 在 Streamlit 中显示 HTML 力图  
+        st.components.v1.html(force_plot_html, height=500)  
 
     except Exception as e:  
         st.error(f"An error occurred: {e}")  
