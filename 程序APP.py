@@ -104,33 +104,3 @@ if st.button("Predict"):
         # 显示预测结果
         st.subheader("Prediction Result:")
         st.write(f"Predicted possibility of AKI is **{probability:.2f}%**")
-
-        
-        # 使用 KernelExplainer  
-        explainer = shap.KernelExplainer(model.predict_proba, features)  
-        shap_values = explainer.shap_values(features)  
-
-        # 处理 SHAP 值  
-        if len(shap_values) > 1:  
-            # 对于二分类，选择正类的 SHAP 值  
-            shap_value_for_class = shap_values[1]  # 正类的 SHAP 值  
-        else:  
-            # 处理只有一个类的情况  
-            shap_value_for_class = shap_values[0]  # 负类的 SHAP 值  
-
-        # 确保只为第一个样本生成力图  
-        force_plot = shap.force_plot(  
-            explainer.expected_value[1],  # 对于正类的期望值  
-            shap_value_for_class[0],  # 对第一个样本的 SHAP 值  
-            features.iloc[0],  # 只传递第一个样本的特征  
-            matplotlib=False  # 设置为 False  
-        )  
-
-        # 在 Streamlit 中显示力图  
-        st.components.v1.html(force_plot, height=500)  
-
-    except Exception as e:  
-        st.error(f"An error occurred: {e}")  
-
-    except Exception as e:  
-        st.error(f"An error occurred: {e}")  
