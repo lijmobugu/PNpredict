@@ -7,4 +7,4 @@ xgboost== 2.1.1
 lightgbm== 4.5.0
 catboost== 1.2.7
 joblib== 1.4.2
-shao== 0.46.0
+shap== 0.46.0
