@@ -105,21 +105,21 @@ if st.button("Predict"):
         st.subheader("Prediction Result:")
         st.write(f"Predicted possibility of AKI is **{probability:.2f}%**")
 
-        # 计算 SHAP 值并生成力图
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(features)
+        # 使用 KernelExplainer  
+        explainer = shap.KernelExplainer(model.predict_proba, features)  
+        shap_values = explainer.shap_values(features)  
 
-        # 绘制 SHAP 力图
-        shap.force_plot(
-            explainer.expected_value,
-            shap_values[0],  # 对第一个样本的 SHAP 值
-            features,
-            matplotlib=True
-        )
-        plt.savefig("shap_force_plot.png", bbox_inches="tight", dpi=300)
+        # 绘制 SHAP 力图  
+        shap.force_plot(  
+            explainer.expected_value[1],  # 对于二分类，选择正类的期望值  
+            shap_values[1],  # 对第一个样本的 SHAP 值  
+            features,  
+            matplotlib=True  
+        )  
+        plt.savefig("shap_force_plot.png", bbox_inches="tight", dpi=300)  
 
-        # 在 Streamlit 中显示图片
-        st.image("shap_force_plot.png", caption="SHAP Force Plot", use_column_width=True)
+        # 在 Streamlit 中显示图片  
+        st.image("shap_force_plot.png", caption="SHAP Force Plot", use_column_width=True)  
 
-    except Exception as e:
-        st.error(f"An error occurred: {e}")
+    except Exception as e:  
+        st.error(f"An error occurred: {e}")  
