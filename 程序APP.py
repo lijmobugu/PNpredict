@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-from IPython.display import display, HTML
 
 # 机器学习库
 from sklearn.pipeline import Pipeline
