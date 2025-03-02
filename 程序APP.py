@@ -103,4 +103,4 @@ if st.button("Predict"):
 
         # 显示预测结果
         st.subheader("Prediction Result:")
-        st.write(f"Predicted possibility of AKI is **{probability:.2f}%**")
+        st.write(f"Predicted possibility of AKI is **{probability:.2f}%**"))
