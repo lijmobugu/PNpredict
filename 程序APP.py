@@ -35,7 +35,6 @@ import streamlit as st
 # 加载模型和标准化器
 try:
     model = joblib.load('stacking_classifier.pkl')
-    scaler = joblib.load('scaler.pkl')  # 新增标准化器加载
 except FileNotFoundError as e:
     st.error(f"File not found: {e}. Please ensure both model and scaler files are uploaded.")
     st.stop()
@@ -92,7 +91,6 @@ for feature in feature_names:
 # 创建DataFrame并标准化
 try:
     features_df = pd.DataFrame([feature_values], columns=feature_names)
-    features_scaled = scaler.transform(features_df)  # 应用标准化
 except ValueError as e:
     st.error(f"Feature processing error: {e}. Check feature names and order.")
     st.stop()
@@ -101,21 +99,21 @@ except ValueError as e:
 if st.button("Predict"):
     try:
         # 模型预测
-        proba = model.predict_proba(features_scaled)  # 获取阳性概率
+        proba = model.predict_proba(features_df)  # 获取阳性概率
         st.subheader("Prediction Result:")
         st.write(f"Predicted possibility of AKI is **{proba*100:.2f}%**")
 
         # SHAP解释（使用KernelExplainer）
-        background = shap.sample(features_scaled, 10)  # 使用少量样本作为背景
+        background = shap.sample(features_df, 10)  # 使用少量样本作为背景
         explainer = shap.KernelExplainer(model.predict_proba, background)
-        shap_values = explainer.shap_values(features_scaled)
+        shap_values = explainer.shap_values(features_df)
         
         # 生成并显示力图
         plt.figure()
         shap.force_plot(
             base_value=explainer.expected_value,
             shap_values=shap_values,
-            features=features_scaled,
+            features=features_df,
             feature_names=feature_names,
             matplotlib=True,
             show=False
