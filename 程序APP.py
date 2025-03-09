@@ -1,21 +1,20 @@
-# 新增必要的导入
-import shap
-from sklearn.preprocessing import LabelEncoder
-
 # 基础库
+import streamlit as st
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn.preprocessing import LabelEncoder
+import shap
 
 # 机器学习库
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
+from sklearn.feature_selection import SelectFromModel, RFE, mutual_info_classif
 from sklearn.metrics import roc_auc_score, make_scorer
 
-# 分类算法（保持与训练时一致）
-from sklearn.ensemble import StackingClassifier
+# 分类算法
 from sklearn.linear_model import LogisticRegression
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB
@@ -29,22 +28,26 @@ from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
 
-import joblib
-import streamlit as st
+from sklearn.feature_selection import SelectKBest, mutual_info_classif, RFE
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.feature_selection import SelectFromModel
 
-# 加载模型和标准化器
+import joblib
+import logging
+import warnings
+
+# 加载模型
 try:
     model = joblib.load('stacking_classifier.pkl')
-except FileNotFoundError as e:
-    st.error(f"File not found: {e}. Please ensure both model and scaler files are uploaded.")
+except FileNotFoundError:
+    st.error("Model file 'stacking_classifier.pkl' not found. Please upload the model file.")
     st.stop()
 
-# 特征范围定义（确保顺序与训练数据一致）
+# 特征范围定义
 feature_names = [
-    "age", "cm", "ASA score", "Smoke", "Drink","Fever", 
-    "linbaxibaojishu", "HB", "PLT","ningxuemeiyuanshijian"
+    "age", "cm", "ASA score", "Smoke", "Drink","Fever", "linbaxibaojishu", "HB", "PLT","ningxuemeiyuanshijian"
 ]
-
 feature_ranges = {
     "age": {"type": "numerical", "min": 18, "max": 80, "default": 40},
     "cm": {"type": "numerical", "min": 140, "max": 170, "default": 160},
@@ -59,14 +62,11 @@ feature_ranges = {
 }
 
 # Streamlit 界面
-st.title("Prediction Model with SHAP Visualization")
-st.header("Enter the following feature values:")
+st.title("Predict the risk of AKI after PN")
+st.header("Please enter the following feature values:")
 
-# 特征输入处理
 feature_values = {}
-for feature in feature_names:  # 按照指定顺序遍历
-    properties = feature_ranges[feature]
-    
+for feature, properties in feature_ranges.items():
     if properties["type"] == "numerical":
         feature_values[feature] = st.number_input(
             label=f"{feature} ({properties['min']} - {properties['max']})",
@@ -80,46 +80,30 @@ for feature in feature_names:  # 按照指定顺序遍历
             options=properties["options"],
         )
 
-# 分类特征编码
+# 处理分类特征
 label_encoders = {}
-for feature in feature_names:
-    if feature_ranges[feature]["type"] == "categorical":
-        le = LabelEncoder()
-        le.fit(feature_ranges[feature]["options"])
-        feature_values[feature] = le.transform([feature_values[feature]])
+for feature, properties in feature_ranges.items():
+    if properties["type"] == "categorical":
+        label_encoders[feature] = LabelEncoder()
+        label_encoders[feature].fit(properties["options"])
+        feature_values[feature] = label_encoders[feature].transform([feature_values[feature]])[0]
 
-# 创建DataFrame并标准化
-try:
-    features_df = pd.DataFrame([feature_values], columns=feature_names)
-except ValueError as e:
-    st.error(f"Feature processing error: {e}. Check feature names and order.")
-    st.stop()
+# 转换为模型输入格式
+features = pd.DataFrame([feature_values], columns=feature_names)
 
-# 预测与可视化
+# 预测与 SHAP 可视化
 if st.button("Predict"):
     try:
         # 模型预测
-        proba = model.predict_proba(features_df)  # 获取阳性概率
-        st.subheader("Prediction Result:")
-        st.write(f"Predicted possibility of AKI is **{proba*100:.2f}%**")
+        predicted_class = model.predict(features)[0]
+        predicted_proba = model.predict_proba(features)[0]
 
-        # SHAP解释（使用KernelExplainer）
-        background = shap.sample(features_df, 10)  # 使用少量样本作为背景
-        explainer = shap.KernelExplainer(model.predict_proba, background)
-        shap_values = explainer.shap_values(features_df)
-        
-        # 生成并显示力图
-        plt.figure()
-        shap.force_plot(
-            base_value=explainer.expected_value,
-            shap_values=shap_values,
-            features=features_df,
-            feature_names=feature_names,
-            matplotlib=True,
-            show=False
-        )
-        plt.tight_layout()
-        st.pyplot(plt.gcf())
-        
+        # 提取预测的类别概率
+        probability = predicted_proba[predicted_class] * 100
+
+        # 显示预测结果
+        st.subheader("Prediction Result:")
+        st.write(f"Predicted possibility of AKI is **{probability:.2f}%**")
+
     except Exception as e:
-        st.error(f"Prediction error: {str(e)}")
+        st.error(f"An error occurred: {e}")
